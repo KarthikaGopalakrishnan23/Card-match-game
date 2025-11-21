@@ -86,6 +86,13 @@ public class Card : MonoBehaviour, IPointerClickHandler
 
         transform.localScale = Vector3.one;
     }
+    public IEnumerator FlipToFrontAfterLoad()
+    {
+        isFlipped = true;
+        backImage.gameObject.SetActive(false);
+        frontImage.gameObject.SetActive(true);
+        yield return null;
+    }
 
     public void SetMatched()
     {

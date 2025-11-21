@@ -25,8 +25,10 @@ public class GameController : MonoBehaviour
     public TMP_Text timerText;
     public TMP_Text turnsText;
     public TMP_Text matchScoreText;
+    public TMP_Text scoreText;  // To display score
 
     private int turns = 0;
+    private int score = 0;  // New score variable
 
     [Header("UI Panels")]
     public GameObject winPanel;
@@ -58,7 +60,7 @@ public class GameController : MonoBehaviour
 
         UpdateUI();
 
-       allCards = FindObjectsOfType<Card>();
+        allCards = FindObjectsOfType<Card>();
     }
 
     void Update()
@@ -107,6 +109,7 @@ public class GameController : MonoBehaviour
             PlaySound(matchSound);
 
             matchedPairs++;
+            UpdateScore(true); // Update score for a correct match
             UpdateUI();
 
             if (matchedPairs >= totalPairs)
@@ -119,6 +122,7 @@ public class GameController : MonoBehaviour
             PlaySound(mismatchSound);
 
             mistakeCount++;
+            UpdateScore(false); // Update score for a mismatch
 
             if (mistakeCount >= maxMistakes)
             {
@@ -158,8 +162,6 @@ public class GameController : MonoBehaviour
 
     void DisableAllCards()
     {
-
-
         foreach (Card c in allCards)
         {
             // Disable the script so OnPointerClick no longer runs
@@ -171,7 +173,7 @@ public class GameController : MonoBehaviour
         }
     }
 
-   public void PlayFlipSound()
+    public void PlayFlipSound()
     {
         PlaySound(flipsound);
     }
@@ -200,10 +202,89 @@ public class GameController : MonoBehaviour
         {
             matchScoreText.text = "Matches: " + matchedPairs + "/" + totalPairs;
         }
+
+        if (scoreText)
+        {
+            scoreText.text = "Score: " + score.ToString();
+        }
     }
+
+    void UpdateScore(bool isMatch)
+    {
+        if (isMatch)
+        {
+           
+            score += 100;
+        }
+        else
+        {
+          
+            score -= 50;
+        }
+
+       
+        score += Mathf.CeilToInt(remainingTime) * 10;
+
+       
+        score -= turns * 10;
+
+     
+        score -= mistakeCount * 50;
+
+       
+        score = Mathf.Max(score, 0);
+    }
+    
+
+
+public void SaveGame()
+{
+    SaveData data = new SaveData();
+
+    data.score = score;
+    data.remainingTime = remainingTime;
+    data.turns = turns;
+    data.mistakeCount = mistakeCount;
+    data.matchedPairs = matchedPairs;
+    data.gameFinished = gameFinished;
+
+    string json = JsonUtility.ToJson(data);
+    PlayerPrefs.SetString("SaveFile", json);
+    PlayerPrefs.Save();
+
+    Debug.Log("Game Saved: " + json);
+}
+
+public void LoadGame()
+{
+    if (!PlayerPrefs.HasKey("SaveFile"))
+    {
+        Debug.Log("No save file found.");
+        return;
+    }
+
+    string json = PlayerPrefs.GetString("SaveFile");
+    SaveData data = JsonUtility.FromJson<SaveData>(json);
+
+    score = data.score;
+    remainingTime = data.remainingTime;
+    turns = data.turns;
+    mistakeCount = data.mistakeCount;
+    matchedPairs = data.matchedPairs;
+    gameFinished = data.gameFinished;
+
+    Debug.Log("Game Loaded: " + json);
+
+    UpdateUI();
+}
 
     public void RestartGame()
     {
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
+
+    void OnApplicationQuit()
+    {
+        SaveGame();
+    }   
 }
